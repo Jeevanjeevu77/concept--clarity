@@ -1,0 +1,21 @@
+# Java / Maven
+target/
+*.class
+.mvn/
+.idea/
+*.iml
+*.log
+
+# Node / React
+node_modules/
+dist/
+.env*
+!.env.production
+.vercel
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+.vercel

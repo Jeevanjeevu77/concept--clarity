@@ -1,0 +1,29 @@
+services:
+  # Backend Service (Spring Boot)
+  - type: web
+    name: concept-clarity-backend
+    env: java
+    buildCommand: mvn -f backend/pom.xml clean install -DskipTests
+    startCommand: java -jar backend/target/concept-clarity-1.0.0.jar
+    envVars:
+      - key: JAVA_VERSION
+        value: 17
+      - key: GROQ_API_KEY
+        sync: false # User will need to set this in Render UI
+      - key: spring_datasource_url
+        value: jdbc:h2:mem:concept_clarity;DB_CLOSE_DELAY=-1
+      - key: spring_datasource_driver_class_name
+        value: org.h2.Driver
+
+  # Frontend Service (Static Site)
+  - type: web
+    name: concept-clarity-frontend
+    env: static
+    buildCommand: npm --prefix frontend install && npm --prefix frontend run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: concept-clarity-backend
+          type: web
+          property: host
