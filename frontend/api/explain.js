@@ -80,27 +80,51 @@ Guidelines:
 - analogy: ${includeAnalogy ? 'Use a simple metaphor from everyday life.' : 'null (not needed).'}
 - relatedTopics: 4-6 genuinely related concepts worth exploring next.`;
 
-    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: systemPrompt }],
-        temperature: 0.7,
-        response_format: { type: 'json_object' },
-      }),
-    });
+    const candidateModels = [
+      process.env.GROQ_MODEL,
+      'openai/gpt-oss-120b',
+      'openai/gpt-oss-20b',
+      'qwen/qwen3.8-27b',
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+    ].filter(Boolean);
 
-    if (!groqResponse.ok) {
-      const errorText = await groqResponse.text();
-      throw new Error(`Groq API returned ${groqResponse.status}: ${errorText}`);
+    let explanationContent = null;
+    let lastError = null;
+
+    for (const model of candidateModels) {
+      try {
+        const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: systemPrompt }],
+            temperature: 0.7,
+            response_format: { type: 'json_object' },
+          }),
+        });
+
+        if (!groqResponse.ok) {
+          const errorText = await groqResponse.text();
+          lastError = new Error(`Groq API (${model}) returned ${groqResponse.status}: ${errorText}`);
+          continue;
+        }
+
+        const groqData = await groqResponse.json();
+        explanationContent = JSON.parse(groqData.choices[0].message.content);
+        break;
+      } catch (err) {
+        lastError = err;
+      }
     }
 
-    const groqData = await groqResponse.json();
-    const explanationContent = JSON.parse(groqData.choices[0].message.content);
+    if (!explanationContent) {
+      throw lastError || new Error('All candidate models failed to generate an explanation.');
+    }
 
     res.status(200).json({
       id: Math.floor(Math.random() * 100000),
