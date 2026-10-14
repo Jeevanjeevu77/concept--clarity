@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/api/v1/explain", "destination": "/api/explain" },
+    { "source": "/api/v1/health", "destination": "/api/health" },
+    { "source": "/api/v1/history/:match*", "destination": "/api/history" },
+    { "source": "/api/v1/history", "destination": "/api/history" },
+    { "source": "/api/v1/:path*", "destination": "/api/:path*" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

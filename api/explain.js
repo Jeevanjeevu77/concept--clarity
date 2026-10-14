@@ -18,7 +18,16 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { topic, level = 'INTERMEDIATE', type = 'DETAILED' } = req.body;
+  let body = req.body;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const { topic, level = 'INTERMEDIATE', type = 'DETAILED' } = body || {};
 
   if (!topic || !topic.trim()) {
     res.status(400).json({ message: 'Topic is required' });
@@ -26,6 +35,15 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    res.status(500).json({
+      success: false,
+      errorMessage: 'GROQ_API_KEY is not configured in Vercel environment variables. Please add GROQ_API_KEY in your Vercel Project Settings > Environment Variables.',
+      shortExplanation: 'GROQ_API_KEY is missing on the server. Please configure it in your Vercel Project Settings and redeploy.',
+    });
+    return;
+  }
 
   try {
     const levelContext = getLevelContext(level);
